@@ -161,29 +161,50 @@
 
         // Logic: Final PDF Export
         convertBtn.onclick = async () => {
-            const filename = fileInput.files[0].name.replace(".docx", ".pdf");
-            convertBtn.disabled = true;
-            consoleLog.innerText = "> EXECUTING_PDF_EXPORT...";
+        const file = fileInput.files[0];
+        convertBtn.disabled = true;
+        updateLog("PREPARING_FULL_DOCUMENT...");
 
-            const options = {
-                margin: 0.75,
-                filename: filename,
-                image: { type: 'jpeg', quality: 1 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
+        // FIX 1: Ensure the capture area is fully expanded before capturing
+        exportArea.style.display = "block"; 
+        exportArea.style.height = "auto";
+        exportArea.style.position = "relative";
+        exportArea.style.left = "0"; // Move it briefly so browser calculates layout
 
-            try {
-                // Captures the visible preview content
-                await html2pdf().set(options).from(previewBox).save();
-                consoleLog.innerText = "> DOWNLOAD_COMPLETE.";
-            } catch (err) {
-                consoleLog.innerText = "> ERROR: EXPORT_FAILED";
-            } finally {
-                convertBtn.disabled = false;
-            }
+        const options = {
+            margin: [0.5, 0.5], // 0.5 inch margins
+            filename: file.name.replace(".docx", ".pdf"),
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true, 
+                letterRendering: true,
+                scrollY: 0 // FIX 2: Start capture from the very top
+            },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } // FIX 3: Handle multi-page lists
         };
+
+        try {
+            // Give the browser 500ms to "settle" the 40+ items
+            setTimeout(async () => {
+                updateLog("CAPTURING_ALL_PAGES...");
+                await html2pdf().set(options).from(exportArea).save();
+                
+                // Move it back off-screen after saving
+                exportArea.style.position = "absolute";
+                exportArea.style.left = "-9999px";
+                
+                updateLog("SUCCESS: FILE_DOWNLOADED");
+                convertBtn.disabled = false;
+            }, 500);
+        } catch (err) {
+            updateLog("ERROR: SYSTEM_FAILURE");
+            convertBtn.disabled = false;
+        }
+    };
     </script>
 
 </body>
 </html>
+
