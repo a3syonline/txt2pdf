@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOCX_TO_PDF_TOOL</title>
+    
+    <script src="mammoth.browser.min.js"></script>
+    <script src="html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --black: #000000;
+            --white: #ffffff;
+            --gray: #f2f2f2;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--white);
+            color: var(--black);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Container: Responsive and Sharp */
+        .app-container {
+            width: 100%;
+            max-width: 600px;
+            border: 2px solid var(--black);
+            padding: 40px;
+        }
+
+        @media (min-width: 600px) {
+            .app-container { min-width: 550px; }
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0;
+            border-bottom: 2px solid var(--black);
+            padding-bottom: 10px;
+        }
+
+        .action-box { margin: 30px 0; }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--black);
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--black);
+            color: var(--white);
+            border: none;
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        button:disabled { background-color: #999; cursor: not-allowed; }
+
+        #console-output {
+            margin-top: 20px;
+            background-color: var(--gray);
+            padding: 15px;
+            font-family: monospace;
+            font-size: 13px;
+            text-align: left;
+            border-left: 4px solid var(--black);
+        }
+
+        /* Footer: Sharp text with Justify alignment */
+        footer {
+            margin-top: 50px;
+            max-width: 600px;
+            font-size: 0.9rem;
+            text-align: justify; /* Justified for the webapp words */
+            line-height: 1.6;
+        }
+
+        .section-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            display: block;
+            margin-top: 15px;
+            text-decoration: underline;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h2>System.Converter.Execute</h2>
+        
+        <div class="action-box">
+            <input type="file" id="fileIn" accept=".docx">
+            <button id="runBtn" disabled>Start Conversion & Download</button>
+        </div>
+
+        <div id="console-output">> WAITING_FOR_FILE...</div>
+    </div>
+
+    <div id="capture-zone" class="hidden"></div>
+
+    <footer>
+        <span class="section-title">Instructions</span>
+        To use this utility, select a valid .docx file from your local storage. Once the system detects the file, the execute button will activate. Upon clicking, the application will process the document structure within your browser's local memory environment and automatically trigger a system download for the resulting PDF file.
+
+        <span class="section-title">Disclaimer</span>
+        This application operates entirely on the client-side. No data packets containing your document content are transmitted to external servers or third-party entities. The integrity of the original formatting is dependent on the complexity of the source document. Use of this tool constitutes an acknowledgment that the developer is not responsible for data loss or formatting discrepancies.
+    </footer>
+
+    <script>
+        const fileIn = document.getElementById('fileIn');
+        const runBtn = document.getElementById('runBtn');
+        const consoleOut = document.getElementById('console-output');
+        const captureZone = document.getElementById('capture-zone');
+
+        fileIn.onchange = (e) => {
+            if (e.target.files[0]) {
+                consoleOut.innerText = `> FILE_LOADED: ${e.target.files[0].name.toUpperCase()}`;
+                runBtn.disabled = false;
+            }
+        };
+
+        runBtn.onclick = async () => {
+            const file = fileIn.files[0];
+            runBtn.disabled = true;
+            consoleOut.innerText = "> INITIALIZING_EXPORT...";
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    // Convert Word to HTML
+                    const result = await mammoth.convertToHtml({ arrayBuffer: e.target.result });
+                    captureZone.innerHTML = result.value;
+
+                    consoleOut.innerText = "> GENERATING_PDF_FILE...";
+
+                    // Generate and Download PDF
+                    const options = {
+                        margin: 0.8,
+                        filename: file.name.replace(".docx", ".pdf"),
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2 },
+                        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                    };
+
+                    // This .save() command is what triggers the download
+                    await html2pdf().set(options).from(captureZone).save();
+
+                    consoleOut.innerText = "> DOWNLOAD_COMPLETE. SYSTEM_IDLE.";
+                    runBtn.disabled = false;
+                } catch (err) {
+                    consoleOut.innerText = "> ERROR: CONVERSION_INTERRUPTED";
+                    runBtn.disabled = false;
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        };
+    </script>
+</body>
+</html>
