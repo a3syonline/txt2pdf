@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOCX to PDF</title>
+    <title>TXT to PDF</title>
     
     <script src="mammoth.browser.min.js"></script>
 
@@ -11,7 +11,7 @@
         body { font-family: monospace; background: #fff; color: #000; padding: 20px; display: flex; flex-direction: column; align-items: center; line-height: 1.5; }
         .app-box { width: 100%; max-width: 600px; padding: 25px; }
         h1 { font-size: 1.3rem; text-transform: uppercase; padding-bottom: 10px; margin-top: 0; width: 100%; border-bottom: 2px solid #000; }
-        input[type="file"] { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #000; }
+        input[type="file"] { width: 100%; padding: 9px; margin-bottom: 20px; border: 1px solid #000; }
         #display-box { width: 100%; padding: 20px 0; margin: 20px 0; display: none; text-align: left; background: #fff; min-height: 200px; user-select: text; }
         button { width: 100%; padding: 15px; background: #000; color: #fff; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         button:disabled { background: #ccc; cursor: not-allowed; }
@@ -32,9 +32,7 @@
     </div>
 
     <footer>
-        <strong>SUPPORTED FORMATS:</strong> .docx, .txt, .log, .md, .json
-        <br><br>
-        <strong>HOW IT WORKS:</strong> This utility detects the file type automatically. Word documents are processed for layout preservation, while text and log files are loaded directly for maximum speed and searchability.
+        <strong>SUPPORTED FORMATS:</strong> .txt, .log, .md, .json
     </footer>
 
     <script>
@@ -94,3 +92,4 @@
     </script>
 </body>
 </html>
+
