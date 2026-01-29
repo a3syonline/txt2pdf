@@ -2,197 +2,93 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DOCX to PDF</title>
     
     <script src="mammoth.browser.min.js"></script>
     <script src="html2pdf.bundle.min.js"></script>
 
     <style>
-        :root { --black: #000; --white: #fff; --gray: #f4f4f4; }
-        * { box-sizing: border-box; }
-        
-        body { 
-            font-family: Arial, sans-serif; 
-            background: var(--white); 
-            color: var(--black); 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            -webkit-font-smoothing: antialiased; 
-        }
-
-        /* Responsive UI Container */
-        .app-container { 
-            width: 100%; 
-            max-width: 600px; 
-            border: 2px solid var(--black); 
-            padding: 30px; 
-        }
-
-        @media (min-width: 600px) { 
-            .app-container { min-width: 550px; } 
-        }
-
-        /* Header / Title Section */
-        h1 { 
-            font-size: 1.3rem; 
-            text-transform: uppercase; 
-            border-bottom: 2px solid var(--black); 
-            padding-bottom: 10px; 
-            margin-top: 0; 
-            letter-spacing: 1px;
-        }
-
-        input[type="file"] { 
-            width: 100%; 
-            padding: 12px; 
-            border: 1px solid var(--black); 
-            margin-bottom: 20px; 
-            font-family: monospace; 
-            cursor: pointer;
-        }
-
-        /* Preview Area */
-        #preview-box { 
-            width: 100%; 
-            height: 350px; 
-            border: 1px solid var(--black); 
-            overflow-y: auto; 
-            padding: 20px; 
-            margin-bottom: 20px; 
-            background: var(--white);
-            text-align: left; /* Keep document alignment natural */
-            display: none; 
-        }
-
-        button { 
-            width: 100%; 
-            background: var(--black); 
-            color: var(--white); 
-            border: none; 
-            padding: 15px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            cursor: pointer; 
-        }
-
-        button:disabled { background: #999; cursor: not-allowed; }
-
-        #console { 
-            background: var(--gray); 
-            padding: 12px; 
-            font-family: monospace; 
-            font-size: 13px; 
-            border-left: 5px solid var(--black); 
-            margin-top: 15px; 
-        }
-
-        /* Justified Footer Text */
-        footer { 
-            margin-top: 50px; 
-            max-width: 600px; 
-            font-size: 0.9rem; 
-            text-align: justify; 
-            line-height: 1.6; 
-        }
-
-        .bold-label { 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            display: block; 
-            margin-top: 15px; 
-            text-decoration: underline; 
-        }
+        body { font-family: monospace; background: #fff; color: #000; padding: 20px; display: flex; flex-direction: column; align-items: center; line-height: 1.5; }
+        .app-box { width: 100%; max-width: 600px; border: 2px solid #000; padding: 25px; }
+        #preview-area { border: 1px solid #000; padding: 20px; margin: 20px 0; display: none; text-align: left; background: #fff; }
+        button { width: 100%; padding: 15px; background: #000; color: #fff; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #status-bar { background: #f0f0f0; padding: 10px; margin-top: 15px; border-left: 5px solid #000; font-size: 12px; width: 100%; }
+        footer { margin-top: 50px; max-width: 600px; text-align: justify; font-size: 13px; border-top: 1px solid #000; padding-top: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <h1>DOCX to PDF</h1>
+    <div class="app-box">
+        <strong>DOCX to PDF CONVERTER</strong><br><br>
+        <input type="file" id="fileSelector" accept=".docx" style="width: 100%;">
         
-        <input type="file" id="fileInput" accept=".docx">
-        
-        <div id="preview-box"></div>
+        <div id="preview-area"></div>
 
-        <button id="convertBtn" disabled>Convert & Download PDF</button>
-        
-        <div id="console">> SYSTEM_READY...</div>
+        <button id="startBtn" disabled>Generate PDF</button>
+        <div id="status-bar">> SYSTEM_READY</div>
     </div>
 
     <footer>
-        <span class="bold-label">How to use</span>
-        Select a .docx file from your local machine to generate an instant on-screen preview. Once the preview is loaded, the conversion button will activate. Clicking the button will initiate the local browser-side conversion process and immediately trigger the download of your PDF document.
-
-        <span class="bold-label">Disclaimer</span>
-        All processing occurs within your browser's local memory. No files are uploaded to any external server, ensuring your data remains private. This tool is provided for functional convenience. Formatting may vary based on the complexity of the source document.
+        <strong>HOW TO USE:</strong> Select a .docx file from your device. Wait for the text to appear in the preview box. Once the text is visible, click the "Generate PDF" button. Your file will process and download automatically to your system.
+        <br><br>
+        <strong>DISCLAIMER:</strong> This tool operates entirely within your local browser environment. No data is transmitted to external servers. Document formatting may vary depending on the complexity of the source file.
     </footer>
 
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const renderBox = document.getElementById('preview-box');
-        const convertBtn = document.getElementById('convertBtn');
-        const consoleLog = document.getElementById('console');
+        const fileSelector = document.getElementById('fileSelector');
+        const previewArea = document.getElementById('preview-area');
+        const startBtn = document.getElementById('startBtn');
+        const statusBar = document.getElementById('status-bar');
 
-        // Logic: Preview Generation
-        fileInput.onchange = (e) => {
+        fileSelector.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            consoleLog.innerText = "> LOADING_PREVIEW...";
+            statusBar.innerText = "> LOADING_FILE...";
             const reader = new FileReader();
 
             reader.onload = async (event) => {
                 try {
+                    // Mammoth reads the 'ArrayBuffer' from the file
                     const result = await mammoth.convertToHtml({ arrayBuffer: event.target.result });
                     
-                    previewBox.innerHTML = result.value;
-                    previewBox.style.display = "block";
+                    previewArea.innerHTML = result.value;
+                    previewArea.style.display = "block"; // Show it to prevent "Blank PDF"
                     
-                    consoleLog.innerText = `> PREVIEW_SUCCESS: ${file.name.toUpperCase()}`;
-                    convertBtn.disabled = false;
+                    statusBar.innerText = "> READY: " + file.name.toUpperCase();
+                    startBtn.disabled = false;
                 } catch (err) {
-                    consoleLog.innerText = "> ERROR: FILE_UNREADABLE";
+                    statusBar.innerText = "> ERROR: FILE_UNREADABLE (Ensure it is a .docx file)";
                 }
             };
             reader.readAsArrayBuffer(file);
         };
 
-        // Logic: Final PDF Export
-        convertBtn.onclick = async () => {
-    const file = fileInput.files[0];
-    convertBtn.disabled = true;
-    consoleLog.innerText = "> INITIALIZING_STABLE_EXPORT...";
+        startBtn.onclick = async () => {
+            const file = fileSelector.files[0];
+            startBtn.disabled = true;
+            statusBar.innerText = "> EXECUTING_EXPORT...";
 
-    // This ensures the render box is fully "visible" to the PDF library
-    renderBox.style.display = "block";
-    renderBox.style.height = "auto";
+            const options = {
+                margin: 0.5,
+                filename: file.name.replace(".docx", ".pdf"),
+                html2canvas: { scale: 2, scrollY: 0, useCORS: true },
+                jsPDF: { unit: 'in', format: 'letter', compress: true },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
 
-    const options = {
-        margin: [0.5, 0.5],
-        filename: file.name.replace(".docx", ".pdf"),
-        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait', compress: true },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } 
-    };
-
-    try {
-        // Wait 1 second to make sure the 40+ items are fully drawn
-        setTimeout(async () => {
-            await html2pdf().set(options).from(renderBox).save();
-            consoleLog.innerText = "> DOWNLOAD_SUCCESSFUL.";
-            convertBtn.disabled = false;
-        }, 1000); 
-    } catch (err) {
-        consoleLog.innerText = "> ERROR: CONVERSION_FAILED";
-        convertBtn.disabled = false;
-    }
-};
+            // 1-second delay to ensure all 40+ items are fully rendered on the page
+            setTimeout(async () => {
+                try {
+                    await html2pdf().set(options).from(previewArea).save();
+                    statusBar.innerText = "> COMPLETE. CHECK_DOWNLOAD_FOLDER.";
+                } catch (err) {
+                    statusBar.innerText = "> ERROR: EXPORT_CRASHED";
+                }
+                startBtn.disabled = false;
+            }, 1000);
+        };
     </script>
-
 </body>
 </html>
-
-
-
