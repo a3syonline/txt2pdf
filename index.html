@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TXT to PDF</title>
+    <title>TXT to PDF — Local PDF Converter</title>
     
     <script src="mammoth.browser.min.js"></script>
     <script src="html2pdf.bundle.min.js"></script>
@@ -11,9 +11,9 @@
     <style>
         /* Responsive design with zero horizontal padding */
         body { 
-            font-family: monospace; 
-            background: #fff; 
-            color: #000; 
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif; 
+            background: #f5f7fb; 
+            color: #17212f; 
             padding: 20px 7px; /* No left/right padding on body */
             margin: 0;
             display: flex; 
@@ -24,7 +24,7 @@
         
         .app-box { 
             width: 100%; 
-            max-width: 600px; 
+            max-width: 780px; 
             padding: 25px 0; /* Removed left/right padding */
         }
 
@@ -33,14 +33,14 @@
             text-transform: uppercase; 
             padding-bottom: 10px; 
             margin: 0 10px 20px 10px; /* Small margin for text breathing room */
-            border-bottom: 2px solid #000; 
+            border-bottom: 2px solid #17212f; 
         }
 
         input[type="file"] { 
             width: calc(100% - 20px); /* Adjusting for margin */
             margin: 0 10px 20px 10px;
             padding: 12px 0; 
-            border: 1px solid #000;
+            border: 1px dashed #94a3b8;
         }
         
         #display-box { 
@@ -59,7 +59,7 @@
             width: calc(100% - 20px);
             margin: 0 10px;
             padding: 15px 0; 
-            background: #000; 
+            background: #17212f; 
             color: #fff; 
             border: none; 
             font-weight: bold; 
@@ -90,14 +90,37 @@
             border-top: 1px solid #000; 
             padding: 20px 10px; /* Minimal padding for readability on footer text */
         }
+
+        * { box-sizing: border-box; }
+        .tagline { margin: -8px 10px 18px; color: #64748b; font-size: .9rem; }
+        .settings { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 12px 10px 18px; }
+        .settings label { display: flex; flex-direction: column; gap: 5px; font-size: .81rem; font-weight: 600; color: #475569; }
+        .settings select { min-width: 0; width: 100%; padding: 10px; background: white; color: #17212f; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; }
+        .preview-heading { margin: 14px 10px 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .85rem; color: #475569; }
+        #display-box { width: calc(100% - 20px); margin: 12px 10px 20px; padding: 28px; border: 1px solid #dfe5ee; border-radius: 7px; box-shadow: 0 4px 20px #17212f0a; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap; }
+        #display-box p { margin: 0 0 1em; }
+        #display-box table { border-collapse: collapse; max-width: 100%; }
+        #display-box td,#display-box th { border: 1px solid #cbd5e1; padding: 5px 8px; }
+        #display-box img { max-width: 100%; height: auto; }
+        #status-msg { padding: 10px 12px; width: calc(100% - 20px); }
+        footer { max-width: 780px; box-sizing: border-box; padding: 20px 10px; color: #475569; }
+        @media (max-width: 540px) { .settings { gap: 9px; } #display-box { padding: 16px; } }
     </style>
 </head>
 <body>
 
     <div class="app-box">
         <h1>TXT to PDF</h1>
+        <p class="tagline">Import a document, adjust the page layout, and export a PDF. Your file stays in this browser.</p>
         <input type="file" id="file-input" accept=".docx, .txt, .log, .md, .json, .csv">
         
+        <div class="settings">
+            <label>Paper size<select id="paper-size"><option value="a4">A4</option><option value="letter">US Letter</option><option value="a5">A5</option></select></label>
+            <label>Orientation<select id="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>
+            <label>Text size<select id="font-size"><option value="12">Small · 12 px</option><option value="14" selected>Normal · 14 px</option><option value="16">Large · 16 px</option><option value="18">Extra large · 18 px</option></select></label>
+            <label>Margins<select id="margin"><option value="0.3">Narrow</option><option value="0.5" selected>Normal</option><option value="0.75">Wide</option></select></label>
+        </div>
+        <div class="preview-heading"><strong>Content preview</strong><span>Export layout is applied when generating PDF</span></div>
         <div id="display-box"></div>
 
         <button id="action-btn" disabled>Generate PDF</button>
@@ -105,9 +128,9 @@
     </div>
 
     <footer>
-        <strong>SUPPORTED FORMATS:</strong> .txt, .log, .md, .json, .csv
+        <strong>SUPPORTED FORMATS:</strong> .txt, .log, .md, .json, .csv, .docx
         <br><br>
-        <strong>HOW TO USE:</strong> Select any supported file. The tool acts as a <strong>Simple Reader</strong>. Once the content is visible, click "Generate PDF" to export a high-fidelity visual snapshot. This is a browser-based simple reader-generator. All files are processed locally on your device, ensuring your data never leaves your browser and remains 100% private.
+        <strong>HOW TO USE:</strong> Select any supported file. The tool acts as a <strong>Simple Reader</strong>. Once the content is visible, choose the paper settings and click "Generate PDF". The preview shows content flow, not exact PDF page boundaries. This is a browser-based simple reader-generator. All files are processed locally on your device, ensuring your data never leaves your browser and remains 100% private.
     </footer>
 
     
@@ -117,12 +140,25 @@
         const displayBox = document.getElementById('display-box');
         const actionBtn = document.getElementById('action-btn');
         const statusMsg = document.getElementById('status-msg');
+        const paperSize = document.getElementById('paper-size');
+        const orientation = document.getElementById('orientation');
+        const fontSize = document.getElementById('font-size');
+        const margin = document.getElementById('margin');
+        let currentFile = null;
+        function decodeText(buffer) {
+            const b = new Uint8Array(buffer);
+            if (b[0] === 255 && b[1] === 254) return new TextDecoder('utf-16le').decode(b);
+            if (b[0] === 254 && b[1] === 255) return new TextDecoder('utf-16be').decode(b);
+            return new TextDecoder('utf-8').decode(b);
+        }
+        fontSize.addEventListener('change', () => { displayBox.style.fontSize = fontSize.value + 'px'; });
 
         fileInput.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             const ext = file.name.split('.').pop().toLowerCase();
+            if (!['txt','log','md','json','csv','docx'].includes(ext)) { statusMsg.innerText = "> ERROR: UNSUPPORTED_FORMAT"; return; }
             statusMsg.innerText = "> LOADING_READER...";
             const reader = new FileReader();
 
@@ -143,36 +179,44 @@
                     statusMsg.innerText = "> ERROR: FILE_UNREADABLE";
                 }
             };
+            reader.onerror = () => { currentFile = null; actionBtn.disabled = true; statusMsg.innerText = "> ERROR: FILE_UNREADABLE"; };
             reader.readAsArrayBuffer(file);
         };
 
         actionBtn.onclick = async () => {
-            const file = fileInput.files[0];
+            const file = currentFile;
+            if (!file || actionBtn.disabled) return;
             actionBtn.disabled = true;
-            statusMsg.innerText = "> EXECUTING_FULL_EXPORT...";
-
+            statusMsg.innerText = "> GENERATING_PDF...";
+            const portraitWidth = paperSize.value === 'a5' ? 560 : paperSize.value === 'letter' ? 790 : 794;
+            const exportWidth = orientation.value === 'landscape' ? Math.round(portraitWidth * 1.414) : portraitWidth;
+            const clone = displayBox.cloneNode(true);
+            clone.removeAttribute('id');
+            clone.style.cssText = 'display:block!important;background:#fff;color:#111;box-sizing:border-box;border:0;box-shadow:none;margin:0;padding:0;min-height:0;max-height:none;width:100%;overflow:visible;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;font-family:system-ui,sans-serif;font-size:' + fontSize.value + 'px';
+            const holder = document.createElement('div');
+            holder.style.cssText = 'position:fixed;left:-100000px;top:0;background:#fff;padding:0;z-index:-1;';
+            holder.style.width = exportWidth + 'px';
+            holder.appendChild(clone);
+            document.body.appendChild(holder);
             const options = {
-                margin: 0.5,
-                filename: file.name.replace(/\.[^/.]+$/, "") + ".pdf",
-                html2canvas: { 
-                    scale: 2, 
-                    scrollY: 0, 
-                    useCORS: true,
-                    windowHeight: displayBox.scrollHeight 
-                },
-                jsPDF: { unit: 'in', format: 'letter', compress: true },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                margin: Number(margin.value),
+                filename: file.name.replace(/\\.[^/.]+$/, '') + '.pdf',
+                image: {type:'jpeg', quality:0.98},
+                html2canvas: {scale:1.6, scrollY:0, useCORS:true},
+                jsPDF: {unit:'in', format:paperSize.value, orientation:orientation.value, compress:true},
+                pagebreak: {mode:['css','legacy']}
             };
-
-            setTimeout(async () => {
-                try {
-                    await html2pdf().set(options).from(displayBox).save();
-                    statusMsg.innerText = "> DOWNLOAD_COMPLETE.";
-                } catch (err) {
-                    statusMsg.innerText = "> ERROR: EXPORT_CRASHED";
-                }
+            try {
+                if (typeof html2pdf === 'undefined') throw new Error('PDF library unavailable');
+                await html2pdf().set(options).from(clone).save();
+                statusMsg.innerText = "> DOWNLOAD_COMPLETE.";
+            } catch (err) {
+                console.error(err);
+                statusMsg.innerText = "> ERROR: EXPORT_FAILED";
+            } finally {
+                holder.remove();
                 actionBtn.disabled = false;
-            }, 1000);
+            }
         };
     </script>
 </body>
